@@ -1,6 +1,6 @@
 # Portfolio
-
-## Programming Languages
-### Python
-### Java
-### C++
+## Programming Skills
+### Programming Languages
+- Python
+- Java
+- C++
