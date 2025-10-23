@@ -1,20 +1,55 @@
 class chess_game():
 
-    king_movements = {
-        'One space vertical':[0,1],
-        'One space horizontal':[1,0],
-        'One space diagonal':[[1,1],[1,-1],[-1,1],[-1,-1]]}
-    queen_movements = ['Multi spaces vertical', 'Multi spaces horizontal', 'Multi spaces diagonal']
-    bishop_movements = ['Multi spaces diagonal']
-    knight_movements = ['One space horizontal and Two spaces vertical', 'Two Spaces horizontal and One space vertical']
-    rook_movements = ['Multi spaces horizontal','Multi spaces vertical']
-    pawn_movements = {
-        'Two spaces vertical (In one direction, first move of game)':[[0,2],[0,-2]],
-        'One space vertical (In one direction)':[[0,1],[0,-1]],
-        'One space diagonal (when taking a piece)':[[1,1],[1,-1],[-1,1],[-1,-1]]}
-
     def __init__(self):
         print('Chess Game')
+        game_board = chess_board()
+
+class chess_board():
+
+    board = [
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','','']
+        ]
+
+    def __init__(self):
+        self.team_one = chess_team('White')
+        self.team_two = chess_team('Black')
+        self.populate_board()
+
+    def populate_board(self):
+        for k, v in self.team_one.team_pieces.items():
+            if len(v) == 1:
+                x,y = v[0].piece_current_location
+                self.board[x][y] = f'{v[0].piece_colour} {k}'
+                self.print_board()
+            else:
+                for piece in v:
+                    x,y = piece.piece_current_location
+                    self.board[x][y] = f'{piece.piece_colour} {k}'
+                    self.print_board()
+
+        for k, v in self.team_two.team_pieces.items():
+            if len(v) == 1:
+                x,y = v[0].piece_current_location
+                self.board[x][y] = f'{v[0].piece_colour} {k}'
+                self.print_board()
+            else:
+                for piece in v:
+                    x,y = piece.piece_current_location
+                    self.board[x][y] = f'{piece.piece_colour} {k}'
+                    self.print_board()
+
+    def print_board(self):
+        print('--------------------------------------')
+        for row in self.board:
+            print(row)
+        print('--------------------------------------')
 
 class chess_team():
 
@@ -92,7 +127,6 @@ class chess_piece():
         self.piece_movement = movements
         self.piece_no = no
         self.piece_current_location = self.piece_starting_location()
-        #self.piece_movement = self.piece_movements()
         self.status = 'Active'
 
     def __str__(self):
@@ -147,33 +181,8 @@ class chess_piece():
                     return [7,7]
         else:
             if self.piece_colour == 'White':
-                return [1,self.piece_no+1]
+                return [1,self.piece_no-1]
             else:
-                return [6,self.piece_no+1]
-
-
-
-    def piece_movements(self):
-        piece_movements = {'King':'One square all directions',
-                           'Queen': 'Multiple squares all directions',
-                           'Bishop': 'Multiple squares diagonally',
-                           'Knight': 'One square horizontally and two squares vertically or two squares horizontally and one square vertically',
-                           'Rook': 'Multiple squares horizontally and vertically',
-                           'Pawn': 'One square vertically'}
-        if self.piece_role == 'Pawn':
-            return self.pawn_movements()
-        elif self.piece_role == 'Rook':
-            return self.rook_movements()
-        #return piece_movements[self.piece_role]
-    
-    def pawn_movements(self):
-        if self.piece_colour == 'White':
-            return [[0,-2],[0,-1],[1,-1],[-1,-1]]
-        else:
-            return [[0,1],[1,1],[-1,1]]
-        
-    def rook_movements(self):
-        return [[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0]]
-
-chess_team('White')
-chess_team('Black')
+                return [6,self.piece_no-1]
+            
+my_board = chess_board()
