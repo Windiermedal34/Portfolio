@@ -2,7 +2,51 @@ class chess_game():
 
     def __init__(self):
         print('Chess Game')
-        game_board = chess_board()
+        self.setting_up_game()
+        self.play_game()
+
+    def setting_up_game(self):
+        print('Setting Up The Game')
+        self.game_board = chess_board()
+
+    def play_game(self):
+        print('Playing The Game')
+        flag = True
+        teams = self.game_board.retrieve_teams()
+        while (flag):
+            for team in teams:
+                print('-------------------------------')
+                print(f"{team.team_colour} Team's Turn")
+                print('------N-------------------------')
+                decision = self.display_menu()
+                if decision == 'S':
+                    break
+                piece = team.select_piece()
+                piece.move_piece()
+            break
+        print("Game Over")
+
+    def display_menu(self):
+        decision = ""
+        flag = True
+        board_flag = False
+        while flag:
+            if not board_flag:
+                print("MENU:\n - Display Board (D)\n - Move Piece (M)\n - Surrender (S):")
+            else:
+                print("MENU:\n - Move Piece (M)\n - Surrender (S):")
+            try:
+                decision = input("Select 'D', 'M' or 'S': ").upper()
+            except Exception:
+                print("Error Occured")
+                continue
+            if decision == 'D':
+                board_flag = True
+                self.game_board.print_board()
+                continue
+            elif decision == 'M' or decision == 'S':
+                flag = False
+        return decision
 
 class chess_board():
 
@@ -22,28 +66,26 @@ class chess_board():
         self.team_two = chess_team('Black')
         self.populate_board()
 
+    def retrieve_teams(self):
+        return self.team_one,self.team_two
+
     def populate_board(self):
         for k, v in self.team_one.team_pieces.items():
             if len(v) == 1:
                 x,y = v[0].piece_current_location
                 self.board[x][y] = f'{v[0].piece_colour} {k}'
-                self.print_board()
             else:
                 for piece in v:
                     x,y = piece.piece_current_location
                     self.board[x][y] = f'{piece.piece_colour} {k}'
-                    self.print_board()
-
         for k, v in self.team_two.team_pieces.items():
             if len(v) == 1:
                 x,y = v[0].piece_current_location
                 self.board[x][y] = f'{v[0].piece_colour} {k}'
-                self.print_board()
             else:
                 for piece in v:
                     x,y = piece.piece_current_location
                     self.board[x][y] = f'{piece.piece_colour} {k}'
-                    self.print_board()
 
     def print_board(self):
         print('--------------------------------------')
@@ -72,8 +114,27 @@ class chess_team():
         self.team_pieces['Pawn'] = []
         for i in range(8):
             self.team_pieces['Pawn'].append(chess_piece(self.team_colour, 'Pawn', self.piece_movements['Pawn'], i+1))
-        
-        self.print_pieces()
+
+    def select_piece(self):
+        for role in self.team_pieces.keys():
+            print(role)
+        select_role = str(input("Select the role of a piece you would like to move."))
+        piece_list = self.team_pieces[select_role]
+        print(f"{select_role}s")
+        for piece in piece_list:
+            print(piece)
+        select_piece = int(input(f"Select which {select_role} you would like to move."))
+        return piece_list[select_piece-1]
+
+    def show_pieces(self):
+        for piece_role,piece_list in self.team_pieces.items():
+            print(f"{piece_role}s")
+            if len(piece_list) == 1:
+                piece = piece_list[0]
+                piece.print_piece_short()
+            else:
+                for piece in piece_list:
+                    piece.print_piece_short()
 
     def print_pieces(self):
         print('-------------------------------')
@@ -121,6 +182,25 @@ class chess_team():
 
 class chess_piece():
 
+    starting_locations = {
+        "White": {
+            "King": [0,4],
+            "Queen": [0,3],
+            "Bishop": [[0,2],[0,5]],
+            "Knight": [[0,1],[0,6]],
+            "Rook": [[0,0],[0,7]],
+            "Pawn": [[1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7]]
+        },
+        "Black": {
+            "King": [7,4],
+            "Queen": [7,3],
+            "Bishop": [[7,2],[7,5]],
+            "Knight": [[7,1],[7,6]],
+            "Rook": [[7,0],[7,7]],
+            "Pawn": [[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[6,6],[6,7]]
+        }
+    }
+
     def __init__(self, colour, role, movements, no):
         self.piece_colour = colour
         self.piece_role = role
@@ -130,59 +210,73 @@ class chess_piece():
         self.status = 'Active'
 
     def __str__(self):
-        return (f'{self.piece_colour} {self.piece_role} {self.piece_no} Piece - {self.status} - Current Location {self.piece_current_location} - Can move {self.piece_movement}')
+        return (f'{self.piece_no} - {self.piece_role} {self.piece_no} - Current Location: {self.piece_current_location}')
     
     def piece_defeated(self):
         self.status = 'Defeated'
 
+    def move_piece(self):
+        print(f"Current Location: {self.piece_current_location}\nWhere would you like to move:")
+        for move in self.piece_movement:
+            new_location = [self.piece_current_location[0] + move[0],self.piece_current_location[1] + move[1]]
+            if new_location[0] < 0 or new_location[0] > 7 or new_location[1] < 0 or new_location[1] > 7:
+                continue
+            print(f"-{new_location}")
+
+
     def piece_starting_location(self):
-        if self.piece_role == 'King':
-            if self.piece_colour == 'White':
-                return [0,4]
-            else:
-                return [7,4]
-        elif self.piece_role == 'Queen':
-            if self.piece_colour == 'White':
-                return [0,3]
-            else:
-                return [7,3]
-        elif self.piece_role == 'Bishop':
-            if self.piece_no == 1:
-                if self.piece_colour == 'White':
-                    return [0,2]
-                else:
-                    return [7,2]
-            else:
-                if self.piece_colour == 'White':
-                    return [0,5]
-                else:
-                    return [7,5]
-        elif self.piece_role == 'Knight':
-            if self.piece_no == 1:
-                if self.piece_colour == 'White':
-                    return [0,1]
-                else:
-                    return [7,1]
-            else:
-                if self.piece_colour == 'White':
-                    return [0,6]
-                else:
-                    return [7,6]
-        elif self.piece_role == 'Rook':
-            if self.piece_no == 1:
-                if self.piece_colour == 'White':
-                    return [0,0]
-                else:
-                    return [7,0]
-            else:
-                if self.piece_colour == 'White':
-                    return [0,7]
-                else:
-                    return [7,7]
+        locations = self.starting_locations[self.piece_colour][self.piece_role]
+        if self.piece_role == 'King' or self.piece_role == 'Queen':
+            return locations
         else:
-            if self.piece_colour == 'White':
-                return [1,self.piece_no-1]
-            else:
-                return [6,self.piece_no-1]
+            return locations[self.piece_no-1]
+        #if self.piece_role == 'King':
+            #if self.piece_colour == 'White':
+                #return [0,4]
+            #else:
+                #return [7,4]
+        #elif self.piece_role == 'Queen':
+            #if self.piece_colour == 'White':
+                #return [0,3]
+            #else:
+                #return [7,3]
+        #elif self.piece_role == 'Bishop':
+            #if self.piece_no == 1:
+                #if self.piece_colour == 'White':
+                    #return [0,2]
+                #else:
+                    #return [7,2]
+            #else:
+                #if self.piece_colour == 'White':
+                    #return [0,5]
+                #else:
+                    #return [7,5]
+        #elif self.piece_role == 'Knight':
+            #if self.piece_no == 1:
+                #if self.piece_colour == 'White':
+                    #return [0,1]
+                #else:
+                    #return [7,1]
+            #else:
+                #if self.piece_colour == 'White':
+                    #return [0,6]
+                #else:
+                    #return [7,6]
+        #elif self.piece_role == 'Rook':
+            #if self.piece_no == 1:
+                #if self.piece_colour == 'White':
+                    #return [0,0]
+                #else:
+                    #return [7,0]
+            #else:
+                #if self.piece_colour == 'White':
+                    #return [0,7]
+                #else:
+                    #return [7,7]
+        #else:
+            #if self.piece_colour == 'White':
+                #return [1,self.piece_no-1]
+            #else:
+                #return [6,self.piece_no-1]
             
-my_board = chess_board()
+my_game = chess_game()
