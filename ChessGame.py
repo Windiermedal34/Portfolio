@@ -217,6 +217,8 @@ class chess_piece():
         }
     }
 
+    pawn_attack_moves = [[1,1],[1,-1],[-1,1],[-1,-1]]
+
     def __init__(self, colour, role, movements, no):
         self.piece_colour = colour
         self.piece_role = role
@@ -224,9 +226,14 @@ class chess_piece():
         self.piece_no = no
         self.piece_current_location = self.piece_starting_location()
         self.status = 'Active'
+        self.attack = False
 
     def __str__(self):
         return (f'{self.piece_no} - {self.piece_role} {self.piece_no} - Current Location: {self.piece_current_location}')
+    
+    def attack(self):
+        self.attack = True
+        self.move_piece(False)
     
     def piece_defeated(self):
         self.status = 'Defeated'
@@ -237,6 +244,8 @@ class chess_piece():
         move_index = 1
         for move in self.piece_movement:
             if move == [2,0] and self.piece_role == 'Pawn' and not first_turn:
+                continue
+            if move in self.pawn_attack_moves and self.attack == False:
                 continue
             new_location = [self.piece_current_location[0] + move[0],self.piece_current_location[1] + move[1]]
             if new_location[0] < 0 or new_location[0] > 7 or new_location[1] < 0 or new_location[1] > 7:
