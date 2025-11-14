@@ -11,6 +11,7 @@ class chess_game():
 
     def play_game(self):
         print('Playing The Game')
+        first_turn = True
         flag = True
         teams = self.game_board.retrieve_teams()
         while (flag):
@@ -20,10 +21,43 @@ class chess_game():
                 print('------N-------------------------')
                 decision = self.display_menu()
                 if decision == 'S':
+                    flag = False
                     break
                 piece = team.select_piece()
-                piece.move_piece()
-            break
+                if piece.piece_role == 'Pawn':
+                    x,y = piece.piece_current_location
+                    x1,y1 = -1,-1
+                    x2,y2 = -1,-1
+                    if piece.piece_colour == 'White':
+                        if x < 7:
+                            if y < 7:
+                                x1,y1 = (x+1),(y+1)
+                            if y > 0:
+                                x2,y2 = (x+1),(y-1)
+                            if (x1 != -1 and self.game_board.board[x1][y1] != '') or (x2 != -1 and self.game_board.board[x2][y2] != ''):
+                                print("Attacking")
+                                piece.attack_piece(first_turn)
+                            else:
+                                piece.move_piece(first_turn)
+                    else:
+                        if x > 0:
+                            if y < 7:
+                                x1,y1 = (x-1),(y+1)
+                            if y > 0:
+                                x2,y2 = (x-1),(y-1)
+                            print(x1 != -1 and self.game_board.board[x1][y1] != '')
+                            print(x2 != -1 and self.game_board.board[x2][y2] != '')
+                            if (x1 != -1 and self.game_board.board[x1][y1] != '') or (x2 != -1 and self.game_board.board[x2][y2] != ''):
+                                print("Attacking")
+                                piece.attack_piece(first_turn)
+                            else:
+                                piece.move_piece(first_turn)
+                else:
+                    piece.move_piece(first_turn)
+                self.game_board.update_board()
+                if first_turn:
+                    first_turn = False
+            
         print("Game Over")
 
     def display_menu(self):
@@ -36,7 +70,10 @@ class chess_game():
             else:
                 print("MENU:\n - Move Piece (M)\n - Surrender (S):")
             try:
-                decision = input("Select 'D', 'M' or 'S': ").upper()
+                if not board_flag:
+                    decision = input("Select 'D', 'M' or 'S': ").upper()
+                else:
+                    decision = input("Select 'M' or 'S': ").upper()
             except Exception:
                 print("Error Occured")
                 continue
@@ -87,6 +124,10 @@ class chess_board():
                     x,y = piece.piece_current_location
                     self.board[x][y] = f'{piece.piece_colour} {k}'
 
+    def update_board(self):
+        self.board = [['' for _ in range(8)] for _ in range(8)]
+        self.populate_board()
+    
     def print_board(self):
         print('--------------------------------------')
         for row in self.board:
@@ -154,6 +195,8 @@ class chess_team():
         piece_movements['Queen'] = [
             [0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],
             [1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],
+            [0,-1],[0,-2],[0,-3],[0,-4],[0,-5],[0,-6],[0,-7],
+            [-1,0],[-2,0],[-3,0],[-4,0],[-5,0],[-6,0],[-7,0],
             [1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],
             [1,-1],[2,-2],[3,-3],[4,-4],[5,-5],[6,-6],[7,-7],
             [-1,1],[-2,2],[-3,3],[-4,4],[-5,5],[-6,6],[-7,7],
@@ -171,12 +214,14 @@ class chess_team():
             ]
         piece_movements['Rook'] = [
             [0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],
-            [1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0]
+            [1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],
+            [0,-1],[0,-2],[0,-3],[0,-4],[0,-5],[0,-6],[0,-7],
+            [-1,0],[-2,0],[-3,0],[-4,0],[-5,0],[-6,0],[-7,0]
             ]
         if self.team_colour == 'White':
-            piece_movements['Pawn'] = [[0,-2],[0,-1],[1,-1],[-1,-1]]
+            piece_movements['Pawn'] = [[2,0],[1,0],[1,1],[1,-1]]
         else:
-            piece_movements['Pawn'] = [[0,1],[1,1],[-1,1]]
+            piece_movements['Pawn'] = [[-1,0],[-1,1],[-1,-1]]
 
         return piece_movements
 
@@ -201,6 +246,8 @@ class chess_piece():
         }
     }
 
+    pawn_attack_moves = [[1,1],[1,-1],[-1,1],[-1,-1]]
+
     def __init__(self, colour, role, movements, no):
         self.piece_colour = colour
         self.piece_role = role
@@ -208,21 +255,37 @@ class chess_piece():
         self.piece_no = no
         self.piece_current_location = self.piece_starting_location()
         self.status = 'Active'
+        self.attack = False
 
     def __str__(self):
         return (f'{self.piece_no} - {self.piece_role} {self.piece_no} - Current Location: {self.piece_current_location}')
     
+    def attack_piece(self, first_turn):
+        self.attack = True
+        self.move_piece(first_turn)
+        self.attack = False
+    
     def piece_defeated(self):
         self.status = 'Defeated'
 
-    def move_piece(self):
-        print(f"Current Location: {self.piece_current_location}\nWhere would you like to move:")
+    def move_piece(self,first_turn):
+        possible_moves = []
+        print(f"Current Location: {self.piece_current_location}\nPotential Movements:")
+        move_index = 1
         for move in self.piece_movement:
+            if move == [2,0] and self.piece_role == 'Pawn' and not first_turn:
+                continue
+            if move in self.pawn_attack_moves and self.attack == False:
+                continue
             new_location = [self.piece_current_location[0] + move[0],self.piece_current_location[1] + move[1]]
             if new_location[0] < 0 or new_location[0] > 7 or new_location[1] < 0 or new_location[1] > 7:
                 continue
-            print(f"-{new_location}")
-
+            possible_moves.append(new_location)
+            print(f"-{new_location} ({move_index})")
+            move_index += 1
+        new_location = int(input("Which would you like to move to: "))
+        print(f"New Location = {possible_moves[new_location-1]}")
+        self.piece_current_location = possible_moves[new_location-1]
 
     def piece_starting_location(self):
         locations = self.starting_locations[self.piece_colour][self.piece_role]
@@ -230,53 +293,5 @@ class chess_piece():
             return locations
         else:
             return locations[self.piece_no-1]
-        #if self.piece_role == 'King':
-            #if self.piece_colour == 'White':
-                #return [0,4]
-            #else:
-                #return [7,4]
-        #elif self.piece_role == 'Queen':
-            #if self.piece_colour == 'White':
-                #return [0,3]
-            #else:
-                #return [7,3]
-        #elif self.piece_role == 'Bishop':
-            #if self.piece_no == 1:
-                #if self.piece_colour == 'White':
-                    #return [0,2]
-                #else:
-                    #return [7,2]
-            #else:
-                #if self.piece_colour == 'White':
-                    #return [0,5]
-                #else:
-                    #return [7,5]
-        #elif self.piece_role == 'Knight':
-            #if self.piece_no == 1:
-                #if self.piece_colour == 'White':
-                    #return [0,1]
-                #else:
-                    #return [7,1]
-            #else:
-                #if self.piece_colour == 'White':
-                    #return [0,6]
-                #else:
-                    #return [7,6]
-        #elif self.piece_role == 'Rook':
-            #if self.piece_no == 1:
-                #if self.piece_colour == 'White':
-                    #return [0,0]
-                #else:
-                    #return [7,0]
-            #else:
-                #if self.piece_colour == 'White':
-                    #return [0,7]
-                #else:
-                    #return [7,7]
-        #else:
-            #if self.piece_colour == 'White':
-                #return [1,self.piece_no-1]
-            #else:
-                #return [6,self.piece_no-1]
             
 my_game = chess_game()
