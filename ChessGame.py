@@ -24,7 +24,40 @@ class chess_game():
                     flag = False
                     break
                 piece = team.select_piece()
-                piece.move_piece(first_turn)
+                x,y = piece.piece_current_location
+                x1,y1 = None,None
+                x2,y2 = None,None
+                if piece.piece_role == 'Pawn':
+                    if piece.piece_colour == 'White':
+                        if x < 7:
+                            if y < 7:
+                                x1,y1 = (x+1),(y+1)
+                            if y > 0:
+                                x2,y2 = (x+1),(y-1)
+                            if (x1 != None and self.game_board.board[x1][y1] != '') or (x2 != None and self.game_board.board[x2][y2] != ''):
+                                print("Attacking")
+                                enemies = [enemy for enemy in [self.game_board.board[x1][y1],self.game_board.board[x2][y2]] if enemy != '']
+                                for enemy in enemies:
+                                    print(f'- {enemy}:{enemy.piece_current_location}')
+                                piece.attack_piece(first_turn,enemies)
+                            else:
+                                piece.move_piece(first_turn)
+                    else:
+                        if x > 0:
+                            if y < 7:
+                                x1,y1 = (x-1),(y+1)
+                            if y > 0:
+                                x2,y2 = (x-1),(y-1)
+                            if (x1 != None and self.game_board.board[x1][y1] != '') or (x2 != None and self.game_board.board[x2][y2] != ''):
+                                print("Attacking")
+                                enemies = [enemy for enemy in [self.game_board.board[x1][y1],self.game_board.board[x2][y2]] if enemy != '']
+                                for enemy in enemies:
+                                    print(f'- {enemy}:{enemy.piece_current_location}')
+                                piece.attack_piece(first_turn,enemies)
+                            else:
+                                piece.move_piece(first_turn)
+                else:
+                    piece.move_piece(first_turn)
                 self.game_board.update_board()
                 if first_turn:
                     first_turn = False
@@ -81,28 +114,29 @@ class chess_board():
         for k, v in self.team_one.team_pieces.items():
             if len(v) == 1:
                 x,y = v[0].piece_current_location
-                self.board[x][y] = f'{v[0].piece_colour} {k}'
+                self.board[x][y] = v[0]
             else:
                 for piece in v:
                     x,y = piece.piece_current_location
-                    self.board[x][y] = f'{piece.piece_colour} {k}'
+                    self.board[x][y] = piece
         for k, v in self.team_two.team_pieces.items():
             if len(v) == 1:
                 x,y = v[0].piece_current_location
-                self.board[x][y] = f'{v[0].piece_colour} {k}'
+                self.board[x][y] = v[0]
             else:
                 for piece in v:
                     x,y = piece.piece_current_location
-                    self.board[x][y] = f'{piece.piece_colour} {k}'
+                    self.board[x][y] = piece
 
     def update_board(self):
-        self.board = [[[] for _ in range(8)] for _ in range(8)]
+        self.board = [['' for _ in range(8)] for _ in range(8)]
         self.populate_board()
     
     def print_board(self):
         print('--------------------------------------')
         for row in self.board:
-            print(row)
+            row_str = [str(r) for r in row]
+            print(row_str)
         print('--------------------------------------')
 
 class chess_team():
@@ -129,13 +163,13 @@ class chess_team():
 
     def select_piece(self):
         for role in self.team_pieces.keys():
-            print(role)
-        select_role = str(input("Select the role of a piece you would like to move."))
+            print(f"- {role}")
+        select_role = str(input("Which piece would you would like to move: "))
         piece_list = self.team_pieces[select_role]
         print(f"{select_role}s")
         for piece in piece_list:
-            print(piece)
-        select_piece = int(input(f"Select which {select_role} you would like to move."))
+            print(piece.more_piece_info())
+        select_piece = int(input(f"Which {select_role} piece would you like to move: "))
         return piece_list[select_piece-1]
 
     def show_pieces(self):
@@ -221,6 +255,10 @@ class chess_piece():
 
     def __init__(self, colour, role, movements, no):
         self.piece_colour = colour
+        if colour == 'White':
+            self.enemy_colour = "Black"
+        else:
+            self.enemy_colour = 'White'
         self.piece_role = role
         self.piece_movement = movements
         self.piece_no = no
@@ -228,17 +266,23 @@ class chess_piece():
         self.status = 'Active'
         self.attack = False
 
-    def __str__(self):
-        return (f'{self.piece_no} - {self.piece_role} {self.piece_no} - Current Location: {self.piece_current_location}')
     
-    def attack(self):
+    
+    def __str__(self):
+        return f"{self.piece_colour} {self.piece_role}"
+    
+    def more_piece_info(self):
+        return (f'{self.piece_no} - {self.piece_role} {self.piece_no} - Current Location: {self.piece_current_location}')
+        
+    def attack_piece(self, first_turn, enemies = None):
         self.attack = True
-        self.move_piece(False)
+        self.move_piece(first_turn)
+        self.attack = False
     
     def piece_defeated(self):
         self.status = 'Defeated'
 
-    def move_piece(self,first_turn):
+    def move_piece(self,first_turn,enemies = None):
         possible_moves = []
         print(f"Current Location: {self.piece_current_location}\nPotential Movements:")
         move_index = 1
