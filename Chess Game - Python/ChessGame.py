@@ -24,6 +24,12 @@ class chess_game():
                     flag = False
                     break
                 piece = team.select_piece()
+                piece_moves = piece.moves(first_turn)
+                enemy_pieces = [piece for piece in piece_moves if self.game_board.board[piece[0]][piece[1]] != '']
+                if team.team_colour == 'White':
+                    enemy_pieces = self.game_board.black_positions()
+                else:
+                    enemy_pieces = self.game_board.white_positions()
                 x,y = piece.piece_current_location
                 x1,y1 = None,None
                 x2,y2 = None,None
@@ -56,6 +62,114 @@ class chess_game():
                                 piece.attack_piece(first_turn,enemies)
                             else:
                                 piece.move_piece(first_turn)
+                elif piece.piece_role == 'Rook':
+                    rook_moves = {}
+                    board = self.game_board.board
+                    message = ""
+
+                    for i in range(x+1,8):
+                        
+                        
+                        if board[i][y] == '':
+                            message = "empty"
+                        else:
+                            if board[i][y].piece_colour == piece.piece_colour:
+                                message = f"Ally {board[i][y].piece_role}"
+                            else:
+                                message = f"Enemy {board[i][y].piece_role}"
+                        rook_moves[i,y] = message
+
+                    for i in range(x-1,-1,-1):
+                        if board[i][y] == '':
+                            message = "empty"
+                        else:
+                            if board[i][y].piece_colour == piece.piece_colour:
+                                message = f"Ally {board[i][y].piece_role}"
+                            else:
+                                message = f"Enemy {board[i][y].piece_role}"
+                        rook_moves[i,y] = message
+
+                    for i in range(y+1,8):
+                        if board[x][i] == '':
+                            message = "empty"
+                        else:
+                            if board[x][i].piece_colour == piece.piece_colour:
+                                message = f"Ally {board[x][i].piece_role}"
+                            else:
+                                message = f"Enemy {board[x][i].piece_role}"
+                        rook_moves[x,i] = message
+
+                    for i in range(y-1,-1,-1):
+                        if board[x][i] == '':
+                            message = "empty"
+                        else:
+                            if board[x][i].piece_colour == piece.piece_colour:
+                                message = f"Ally {board[x][i].piece_role}"
+                            else:
+                                message = f"Enemy {board[x][i].piece_role}"
+                        rook_moves[x,i] = message
+                elif piece.piece_role == 'Bishop':
+                    bishop_moves = {}
+                    board = self.game_board.board
+                    message = ""
+
+                    for i in range(1,8):
+
+                        new_x = x+i
+                        new_y = y+i
+
+                        if new_x <= 7 and new_y <= 7:
+                            if board[new_x][new_y] == '':
+                                message = "empty"
+                            else:
+                                if board[new_x][new_y].piece_colour == piece.piece_colour:
+                                    message = f"Ally {board[new_x][new_y].piece_role}"
+                                else:
+                                    message = f"Enemy {board[new_x][new_y].piece_role}"
+                            bishop_moves[new_x,new_y] = message
+
+                        new_y = y-i
+
+                        if new_x <= 7 and new_y >= 0:
+                            if board[new_x][new_y] == '':
+                                message = "empty"
+                            else:
+                                if board[new_x][new_y].piece_colour == piece.piece_colour:
+                                    message = f"Ally {board[new_x][new_y].piece_role}"
+                                else:
+                                    message = f"Enemy {board[new_x][new_y].piece_role}"
+                            bishop_moves[new_x,new_y] = message
+
+                        new_x = x-i
+                        new_y = y+i
+
+                        if new_x >= 0 and new_y <= 7:
+                            if board[new_x][new_y] == '':
+                                message = "empty"
+                            else:
+                                if board[new_x][new_y].piece_colour == piece.piece_colour:
+                                    message = f"Ally {board[new_x][new_y].piece_role}"
+                                else:
+                                    message = f"Enemy {board[new_x][new_y].piece_role}"
+                            bishop_moves[new_x,new_y] = message
+
+                        new_y = y-i
+
+                        if new_x >= 0 and new_y >= 0:
+                            if board[new_x][new_y] == '':
+                                message = "empty"
+                            else:
+                                if board[new_x][new_y].piece_colour == piece.piece_colour:
+                                    message = f"Ally {board[new_x][new_y].piece_role}"
+                                else:
+                                    message = f"Enemy {board[new_x][new_y].piece_role}"
+                            bishop_moves[new_x,new_y] = message
+
+                    print(bishop_moves)
+                elif piece.piece_role == 'Knight':
+                    enemies = []
+
+
                 else:
                     piece.move_piece(first_turn)
                 self.game_board.update_board()
@@ -131,6 +245,24 @@ class chess_board():
     def update_board(self):
         self.board = [['' for _ in range(8)] for _ in range(8)]
         self.populate_board()
+
+    def white_positions(self):
+        white_pieces = []
+        for row in self.board:
+            for piece in row:
+                if piece.piece_colour == 'White':
+                    white_pieces.append(piece)
+                else:
+                    continue
+    
+    def black_positions(self):
+        black_pieces = []
+        for row in self.board:
+            for piece in row:
+                if piece.piece_colour == 'Black':
+                    black_pieces.append(piece)
+                else:
+                    continue
     
     def print_board(self):
         print('--------------------------------------')
@@ -274,8 +406,9 @@ class chess_piece():
         
     def attack_piece(self, first_turn, enemies = None):
         self.attack = True
-        self.move_piece(first_turn, enemies)
+        moves = self.move_piece(first_turn, enemies)
         self.attack = False
+        return moves
     
     def piece_defeated(self):
         self.status = 'Defeated'
@@ -304,6 +437,40 @@ class chess_piece():
         new_location = int(input("Which would you like to move to: "))
         print(f"New Location = {possible_moves[new_location-1]}")
         self.piece_current_location = possible_moves[new_location-1]
+
+    def attack_moves(self,first_turn,enemies):
+        self.attack = True
+        moves = self.move_piece(first_turn, enemies)
+        self.attack = False
+        return moves
+
+    def potential_moves(self,first_turn,enemies):
+        moves = []
+        for move in self.moves(first_turn):
+            enemy_locations = [enemy for enemy in enemies]
+            if move not in enemy_locations and move in self.pawn_attack_moves and self.piece_role == 'Pawn':
+                continue
+            moves.append(move)
+        return moves
+    
+    def moves(self,first_turn,enemies=None):
+        moves = []
+        for move in self.piece_movement:
+            if move in self.pawn_attack_moves and not self.attack:
+                continue
+            if move == [2,0] and self.piece_role == 'Pawn' and not first_turn:
+                continue
+            new_location = [self.piece_current_location[0] + move[0], self.piece_current_location[1] + move[1]]
+
+            if enemies != None:
+                enemy_locations = [enemy for enemy in enemies]
+                if new_location not in enemy_locations and move in self.pawn_attack_moves and self.piece_role == 'Pawn':
+                    continue
+
+            if new_location[0] < 0 or new_location[0] > 7 or new_location[1] < 0 or new_location[1] > 7:
+                continue
+            moves.append(new_location)
+        return moves
 
     def piece_starting_location(self):
         locations = self.starting_locations[self.piece_colour][self.piece_role]
